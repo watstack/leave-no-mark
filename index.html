@@ -114,6 +114,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .qbody{padding:22px 18px 20px}
 .qstep[hidden]{display:none}
 .qstep h3{font-size:20px;line-height:1.2;margin:0 0 14px}
+.qstep h3:focus{outline:none} /* headings get focus only so screen readers announce the new step */
 .qstep h3 small{display:block;margin-top:4px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--ink2)}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{position:relative;height:118px;border-radius:16px;border:1.5px solid var(--line);background:var(--sky2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:8px;text-align:center;font-size:15px;font-weight:700;line-height:1.2}
@@ -540,8 +541,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   function go(n){
     state.step = Math.max(0, Math.min(4, n));
     render();
-    var top = form.getBoundingClientRect().top;
-    if(top < 0) window.scrollBy({ top: top - 16, behavior: 'smooth' });
+    // Bring the whole quote card to the top of the screen on every step change.
+    var top = form.getBoundingClientRect().top - 12;
+    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(Math.abs(top) > 2) window.scrollBy({ top: top, behavior: calm ? 'auto' : 'smooth' });
     // Move keyboard / screen-reader focus to the new step's heading.
     var h = form.querySelector('[data-step="' + state.step + '"] h3');
     if(h) h.focus({ preventScroll: true });
