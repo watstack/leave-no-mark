@@ -4,8 +4,8 @@ One-page site for **Leave No Mark**, window cleaning in Brunswick and surroundin
 
 Plain static HTML. There's no build step, framework or backend. Edit a file, commit, push, and GitHub Pages republishes in about a minute.
 
-- Live (now): https://watstack.github.io/leave-no-mark/
-- All paths are relative, so the same files work at the custom domain's root later without edits.
+- Live: https://leavenomark.org (the old https://watstack.github.io/leave-no-mark/ link redirects here)
+- All paths are relative, so the files work at any address without edits.
 
 ```
 index.html              the whole page (HTML, CSS and JS in one file)
@@ -51,50 +51,37 @@ Only use photos of real jobs that you have permission to show.
 
 ## Quote form setup (Web3Forms, free)
 
-The quote form sends submissions to **leavenomark@outlook.com** through [Web3Forms](https://web3forms.com). Until the key is added, the form shows a "please call or text 0412 564 110" message instead of sending.
+The quote form sends submissions to **leavenomark@outlook.com** through [Web3Forms](https://web3forms.com). The key is already set up. These steps are only needed if it ever has to be replaced. If a submission fails, the form shows a "please call or text 0412 564 110" message.
 
 1. Go to https://web3forms.com and click **Create your Access Key**.
 2. Enter **leavenomark@outlook.com** and submit. The access key is emailed to that inbox, so someone needs to check the Outlook inbox (and its junk folder).
 3. In `index.html`, search for `WEB3FORMS_ACCESS_KEY` and replace the placeholder text inside the quotes:
    ```js
-   var WEB3FORMS_ACCESS_KEY = "WEB3FORMS_ACCESS_KEY";   // before
-   var WEB3FORMS_ACCESS_KEY = "a1b2c3d4-....";          // after
+   var WEB3FORMS_ACCESS_KEY = "a1b2c3d4-....";
    ```
 4. Commit, wait a minute, then send yourself a test quote from the live site.
 
 The key is safe to have in public code: it can only send email to the address it was created for. Spam protection is a hidden "honeypot" checkbox (`botcheck`). Bots tick it, and those submissions are silently dropped. If spam becomes a problem, Web3Forms also offers hCaptcha (see their docs).
 
-## Moving to a custom domain later
+## Custom domain: leavenomark.org
 
-1. **CNAME file.** Add a file called `CNAME` (no extension) to the repo root containing just the domain, e.g. `leavenomark.com.au`. Alternatively, set it in **Settings → Pages → Custom domain**, which creates the file for you.
-2. **DNS at your registrar:**
-   - Apex domain (`leavenomark.com.au`): four **A** records pointing to
-     `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-     (optional IPv6 **AAAA**: `2606:50c0:8000::153`, `2606:50c0:8001::153`, `2606:50c0:8002::153`, `2606:50c0:8003::153`)
-   - `www` subdomain: a **CNAME** record pointing to `watstack.github.io` (no repo name)
-   - Set up both so `www` and the bare domain each work. GitHub redirects between them.
-   - Recommended: verify the domain under your GitHub account's **Settings → Pages** to prevent takeover.
-3. **Enforce HTTPS.** Once DNS has propagated (minutes to a few hours), go to **Settings → Pages** and tick **Enforce HTTPS**. The certificate is free and automatic.
-4. **SEO TODOs** (do these once the domain is live):
-   - [ ] Add a canonical tag in `<head>` (there's a TODO comment marking the spot):
-     `<link rel="canonical" href="https://YOUR-DOMAIN/">`
-   - [ ] Add `<meta property="og:url" content="https://YOUR-DOMAIN/">`
-   - [ ] Change the `og:image` URL from `https://watstack.github.io/leave-no-mark/assets/og-image.jpg` to `https://YOUR-DOMAIN/assets/og-image.jpg`. The old URL keeps redirecting, but the direct one is cleaner.
-   - [ ] Add `"url": "https://YOUR-DOMAIN/"` and `"image": "https://YOUR-DOMAIN/assets/logo-512.png"` to the JSON-LD block
-   - [ ] Add `sitemap.xml` in the repo root:
-     ```xml
-     <?xml version="1.0" encoding="UTF-8"?>
-     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-       <url><loc>https://YOUR-DOMAIN/</loc></url>
-     </urlset>
-     ```
-   - [ ] Add `robots.txt` in the repo root:
-     ```
-     User-agent: *
-     Allow: /
-     Sitemap: https://YOUR-DOMAIN/sitemap.xml
-     ```
-   - [ ] Submit the sitemap in Google Search Console, and link the site from the Google Business Profile (as a service-area business, with no street address shown).
+The domain is registered at Namecheap. These are already set up:
+
+- `CNAME` file in the repo root containing `leavenomark.org`. Don't delete it, or the domain stops working.
+- Namecheap DNS records (**Advanced DNS → Host Records**):
+  - four **A** records, Host `@` → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+  - **CNAME** record, Host `www` → `watstack.github.io`
+- Canonical tag, `og:url`, `og:image` and JSON-LD all use `https://leavenomark.org/`
+- `sitemap.xml` and `robots.txt` in the repo root
+
+Still to do:
+
+- [ ] Tick **Enforce HTTPS** in **Settings → Pages**. It's greyed out until GitHub has issued the certificate, which takes up to about an hour after the domain is added.
+- [ ] Optional: verify the domain in your GitHub account (**Settings → Pages → Add a domain**) and add the TXT record it gives you at Namecheap. This stops anyone else from claiming the domain on GitHub.
+- [ ] Add the site to [Google Search Console](https://search.google.com/search-console) and submit `https://leavenomark.org/sitemap.xml`.
+- [ ] Add `https://leavenomark.org` to the Google Business Profile (as a service-area business, with no street address shown).
+
+If the domain ever changes, update the `CNAME` file, then search the repo for `leavenomark.org` and replace it everywhere.
 
 ## Notes
 
