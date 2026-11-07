@@ -165,7 +165,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .services{padding:44px 0 24px}
 .svc{border-top:1px solid var(--line);padding:24px 0}
 .svc:last-child{border-bottom:1px solid var(--line)}
-.svc h3{font-size:22px;margin:0 0 8px}
+.svc h3{font-size:22px;margin:0 0 8px;display:flex;align-items:center;gap:10px}
+.svc-ico{flex:none;color:var(--navy)}
 .svc p{font-size:16px;line-height:1.55;color:var(--ink2)}
 .svc .fine{margin-top:10px;font-size:14px;font-weight:700;color:var(--navy)}
 .offer{padding:8px 0 0}
@@ -279,7 +280,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <a class="brand" href="#top" aria-label="Leave No Mark home"><svg aria-hidden="true" focusable="false" width="28" height="33" style="color:#0E2A47"><use href="#logo"/></svg><span>LEAVE NO MARK</span></a>
     <span class="tag">FREE QUOTES</span>
     <nav class="nav" aria-label="Main">
-      <a href="#services">Services</a><a href="#how">How it works</a><a href="#photos">Photos</a>
+      <a href="#services">Services</a><a href="#how">How it works</a><!-- <a href="#photos">Photos</a> -->
       <a class="tel" href="tel:0412564110">0412 564 110</a>
     </nav>
   </header>
@@ -414,9 +415,9 @@ button{font:inherit;color:inherit;cursor:pointer}
     <section class="services" id="services">
       <h2 class="label">Services</h2>
       <div class="svc-grid">
-        <div class="svc"><h3>HOMES</h3><p>Inside &amp; outside glass, frames &amp; sills, fly screens, tracks, glass doors &amp; balustrades.</p><p class="fine">Single storey. Some double storey, case by case.</p></div>
-        <div class="svc"><h3>SHOPFRONTS &amp; CAFÉS</h3><p>Weekly, fortnightly or monthly visits.</p></div>
-        <div class="svc"><h3>GUTTER CLEANS</h3><p>Cleared out and flowing again.</p></div>
+        <div class="svc"><h3><svg class="svc-ico" aria-hidden="true" focusable="false" width="26" height="26"><use href="#i-house1"/></svg>HOMES</h3><p>Inside &amp; outside glass, frames &amp; sills, fly screens, tracks, glass doors &amp; balustrades.</p><p class="fine">Single storey. Some double storey, case by case.</p></div>
+        <div class="svc"><h3><svg class="svc-ico" aria-hidden="true" focusable="false" width="26" height="26"><use href="#i-shop"/></svg>SHOPFRONTS &amp; CAFÉS</h3><p>Weekly, fortnightly or monthly visits.</p></div>
+        <div class="svc"><h3><svg class="svc-ico" aria-hidden="true" focusable="false" width="26" height="26"><use href="#i-gut"/></svg>GUTTER CLEANS</h3><p>Cleared out and flowing again.</p></div>
       </div>
     </section>
     <section class="offer">
@@ -438,7 +439,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 </div>
 
 <div class="wrap">
-    <section class="photos" id="photos">
+    <section class="photos" id="photos" hidden><!-- hidden for now: remove "hidden" (and restore the Photos nav link) when real photos are ready -->
     <h2 class="label">Before &amp; after</h2>
     <!-- ===== PHOTO PLACEHOLDERS: swap in real before/after photos (see README) =====
          Save square photos as WebP (about 800x800) in assets/photos/, then replace a placeholder line, e.g.
