@@ -200,6 +200,18 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 @media (min-width:640px) and (max-width:1079px){.hero{max-width:560px;margin:0 auto}}
 @media (max-width:1079px){.hero-ctas,.hero .alt{display:none}}
+/* mobile/tablet: no duplicate wordmark, tighter top so the quote step + Next sit above the fold */
+@media (max-width:1079px){
+  .site-header{padding:12px 0}
+  .site-header .brand span{display:none}
+  .hero-bar{display:none}
+  .hero{padding-top:8px;gap:16px}
+  .hero .sub{margin-top:8px}
+  .qhead{padding:14px 18px}
+  .qbody{padding-top:18px}
+  .tiles:not(.sm) .tile{height:100px}
+  .qfoot{margin-top:16px}
+}
 /* desktop */
 @media (min-width:1080px){
   .wrap{padding:0 56px}
