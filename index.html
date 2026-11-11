@@ -480,6 +480,36 @@ button{font:inherit;color:inherit;cursor:pointer}
      ===================================================================== */
   var WEB3FORMS_ACCESS_KEY = "7a6b3971-2e5e-422e-85e0-67d330f36a92";
 
+  /* =====================================================================
+     UMAMI ANALYTICS (free Hobby plan)  ->  paste your Website ID below.
+     Find it at cloud.umami.is > Settings > Websites > Edit. See README.
+     Tracking only runs on leavenomark.org, never on GitHub preview or local.
+     ===================================================================== */
+  var UMAMI_WEBSITE_ID = "UMAMI_WEBSITE_ID";
+
+  if(UMAMI_WEBSITE_ID && UMAMI_WEBSITE_ID !== 'UMAMI_' + 'WEBSITE_ID'){
+    var us = document.createElement('script');
+    us.defer = true;
+    us.src = 'https://cloud.umami.is/script.js';
+    us.setAttribute('data-website-id', UMAMI_WEBSITE_ID);
+    us.setAttribute('data-domains', 'leavenomark.org,www.leavenomark.org');
+    document.head.appendChild(us);
+  }
+  // Safe to call before the script loads or if it's blocked: it just does nothing.
+  function track(name, data){
+    try { if(window.umami && umami.track) umami.track(name, data); } catch(e){}
+  }
+
+  // Every call / text / WhatsApp / email tap, tagged with where on the page it was.
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href]'); if(!a) return;
+    var h = a.getAttribute('href');
+    var type = /^tel:/.test(h) ? 'call' : /^sms:/.test(h) ? 'text' : /wa\.me/.test(h) ? 'whatsapp' : /^mailto:/.test(h) ? 'email' : /instagram\.com/.test(h) ? 'instagram' : '';
+    if(!type) return;
+    var where = a.closest('.callbar') ? 'sticky bar' : a.closest('.site-footer') ? 'footer' : a.closest('.qerr') ? 'form error' : a.closest('[data-step="4"]') ? 'thank you' : a.closest('#quote') ? 'quote form' : a.closest('.hero') ? 'hero' : 'header';
+    track('contact-' + type, { location: where });
+  });
+
   var ENDPOINT = "https://api.web3forms.com/submit";
   var PHONE_HTML = '<a href="tel:0412564110">0412 564 110</a>';
   var EMAIL_HTML = '<a href="mailto:leavenomark@outlook.com">leavenomark@outlook.com</a>';
@@ -541,8 +571,18 @@ button{font:inherit;color:inherit;cursor:pointer}
     go(0);
   }
 
+  // Quote funnel: one event per step reached going forward (step 5 = sent).
+  var STEP_EVENTS = ['', 'quote-2-details', 'quote-3-property', 'quote-4-contact'];
+  function trackStep(from, to){
+    if(to <= from || to > 3) return;
+    if(to === 1) track('quote-1-started', { services: state.need.join(', ') });
+    track(STEP_EVENTS[to]);
+  }
+
   function go(n){
+    var from = state.step;
     state.step = Math.max(0, Math.min(4, n));
+    trackStep(from, state.step);
     render();
     // Bring the whole quote card to the top of the screen on every step change.
     var top = form.getBoundingClientRect().top - 12;
@@ -584,7 +624,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     var name = f.name.value.trim(), phone = f.phone.value.trim(), email = f.email.value.trim();
     var msg = !name ? 'Please add your name.' : (!phone && !email) ? 'Please add a phone number or an email.' : '';
     err.hidden = !msg; err.textContent = msg;
-    if(msg){ (!name ? f.name : f.phone).focus(); return; }
+    if(msg){ track('quote-validation-error', { reason: !name ? 'no name' : 'no phone or email' }); (!name ? f.name : f.phone).focus(); return; }
 
     var has = function(x){ return state.need.indexOf(x) > -1; };
     var data = {
@@ -605,6 +645,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     if(f.botcheck.checked){ go(4); return; }
 
     var fail = function(){
+      track('quote-send-failed');
       setSending(false);
       showError('Sorry, your request didn’t send. Please call or text Mark on ' + PHONE_HTML + ', or email ' + EMAIL_HTML + '.');
     };
@@ -616,7 +657,11 @@ button{font:inherit;color:inherit;cursor:pointer}
     setSending(true);
     fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) })
       .then(function(r){ return r.json().then(function(j){ if(!r.ok || !j.success) throw new Error(j.message || r.status); }); })
-      .then(function(){ setSending(false); go(4); })
+      .then(function(){
+        // No name/phone/email ever goes to analytics, just the job type.
+        track('quote-5-sent', { services: data.services, property: state.size || 'not given', when: state.when || 'not given' });
+        setSending(false); go(4);
+      })
       .catch(fail);
   });
 

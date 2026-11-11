@@ -63,6 +63,40 @@ The quote form sends submissions to **leavenomark@outlook.com** through [Web3For
 
 The key is safe to have in public code: it can only send email to the address it was created for. Spam protection is a hidden "honeypot" checkbox (`botcheck`). Bots tick it, and those submissions are silently dropped. If spam becomes a problem, Web3Forms also offers hCaptcha (see their docs).
 
+## Analytics (Umami, free)
+
+Page views and quote-form progress are tracked with [Umami Cloud](https://cloud.umami.is) on the free Hobby plan (100K events a month, 6 months of history). No cookies, so no cookie banner, and no names, phone numbers or emails are ever sent. Tracking only runs on `leavenomark.org`, so local previews don't count.
+
+**Setup (once):**
+
+1. Sign up at https://cloud.umami.is and choose the free **Hobby** plan.
+2. **Settings → Websites → Add website**: name `Leave No Mark`, domain `leavenomark.org`.
+3. Click **Edit** on the website and copy the **Website ID**.
+4. In `index.html`, search for `UMAMI_WEBSITE_ID` and paste it between the quotes:
+   ```js
+   var UMAMI_WEBSITE_ID = "a1b2c3d4-....";
+   ```
+5. Commit, open the live site, and check **Realtime** in Umami shows your visit.
+6. Stop your own visits counting: on the live site, open the browser console and run `localStorage.setItem('umami.disabled', 1)` (once per browser).
+
+**Events tracked:**
+
+| Event | When |
+|---|---|
+| (page view) | Automatic, every visit |
+| `quote-1-started` | Next on step 1 (with which services were picked) |
+| `quote-2-details` | Reached step 2 |
+| `quote-3-property` | Reached step 3 |
+| `quote-4-contact` | Reached step 4 (name / phone / email) |
+| `quote-5-sent` | Quote sent successfully (with services, property, when) |
+| `quote-validation-error` | Tried to send without a name, or without a phone or email |
+| `quote-send-failed` | Web3Forms didn't accept it, so the "please call" message showed |
+| `contact-call` / `contact-text` / `contact-whatsapp` / `contact-email` / `contact-instagram` | Tapped that link, with `location` (hero, sticky bar, footer, quote form, thank you, form error, header) |
+
+**Funnel report:** in Umami go to **Reports → Funnel**, pick a window of 1 hour, and add steps: URL `/`, then events `quote-1-started`, `quote-2-details`, `quote-3-property`, `quote-4-contact`, `quote-5-sent`. It shows how many visitors reach each step and where they drop off.
+
+Calls and texts are probably the bigger lead source, so look at the `contact-*` events alongside the funnel.
+
 ## Custom domain: leavenomark.org
 
 The domain is registered at Namecheap. These are already set up:
