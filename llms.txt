@@ -1,0 +1,22 @@
+# Leave No Mark – quote API
+
+> Window cleaning for homes, shopfronts and cafés in Brunswick and surrounding suburbs of Melbourne, VIC, Australia, plus gutter cleans. Owner: Mark. Phone 0412 564 110. Website https://leavenomark.org
+
+AI assistants can request a free quote for a customer. There is no instant price: Mark reviews the request and replies to the customer directly with a free, no-obligation price.
+
+- OpenAPI spec: https://api.leavenomark.org/openapi.json
+- Services and allowed options: GET https://api.leavenomark.org/api/services
+- Request a quote: POST https://api.leavenomark.org/api/quotes (JSON, no API key)
+
+Rules:
+- Only send a request when the customer asked for a quote and agreed to share their name and phone or email. Set "customer_consent": true to confirm this.
+- Do not invent prices. Tell the customer Mark will reply with one.
+- Send each request once. Use an Idempotency-Key header when you retry.
+- If the API returns an error, give the customer the "fallback" contact details from the response.
+
+Example:
+
+POST https://api.leavenomark.org/api/quotes
+Content-Type: application/json
+
+{"services":["windows"],"windows":{"sides":"outside_only"},"property":"double_storey","timing":"flexible","customer":{"name":"Sam Lee","phone":"0412 345 678","suburb":"Brunswick East"},"customer_consent":true,"agent":"Instinct"}
