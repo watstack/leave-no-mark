@@ -121,28 +121,27 @@ There's no instant price. The API passes the job details on, and Mark replies to
 - **Websites can't use it from a visitor's browser.** `POST` has no CORS headers, and bodies must be JSON and under 8 KB.
 - **Private by default.** Customer details are never logged, and caller IPs are only stored as salted hashes. No secrets are in the code. The keys live in Vercel environment variables.
 
-**Setup (once):**
+**Setup (once, about 10 minutes).** Every quote goes straight to **leavenomark@outlook.com** (Mark's inbox). That's the only address it ever sends to.
 
-1. **Resend (email, free):** sign up at https://resend.com, ideally **with leavenomark@outlook.com**. Until the domain is verified, Resend's test sender can only deliver to the account's own email address. Create an API key with **Sending access** only.
-   Optional, but better: **Domains → Add** `leavenomark.org`, add the DNS records it shows at Namecheap, then use a sender like `Leave No Mark <quotes@leavenomark.org>`.
-2. **Upstash Redis (shared rate limits, free):** create a database at https://upstash.com and copy the **REST URL** and **REST token**. Without these, limits only count per server instance.
-3. **Vercel:** **Add New → Project**, import `watstack/leave-no-mark`, set **Root Directory** to `agent-api`, framework **Other**, then add these environment variables:
-
-   | Variable | Value |
-   |---|---|
-   | `RESEND_API_KEY` | from step 1 (required) |
-   | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | from step 2 (strongly recommended) |
-   | `HASH_SALT` | any long random string |
-   | `QUOTE_TO_EMAIL` | optional, default `leavenomark@outlook.com` |
-   | `QUOTE_FROM_EMAIL` | optional, e.g. `Leave No Mark <quotes@leavenomark.org>` once the domain is verified |
-   | `LIMIT_SENT_PER_HOUR`, `LIMIT_SENT_PER_DAY`, `LIMIT_GLOBAL_PER_DAY`, `LIMIT_ATTEMPTS_PER_HOUR` | optional, defaults 5 / 10 / 50 / 30 |
-
-4. **Domain:** in Vercel project **Settings → Domains**, add `api.leavenomark.org`. At Namecheap, add a **CNAME** record with Host `api` pointing to `cname.vercel-dns.com`.
-5. **Test:** open `https://api.leavenomark.org/api/health`. It should say `"quotes": "accepting"`. Then send a test request:
+1. **Resend (free):** sign up at https://resend.com **using leavenomark@outlook.com**. This matters: the free sender only delivers to the email the account was made with. Then go to **API Keys → Create**, choose **Sending access**, and copy the key.
+2. **Vercel (free):** **Add New → Project**, import `watstack/leave-no-mark`, set **Root Directory** to `agent-api`, framework **Other**. Under **Environment Variables**, add `RESEND_API_KEY` with the key from step 1. Click **Deploy**.
+3. **Domain:** in the Vercel project, open **Settings → Domains** and add `api.leavenomark.org`. At Namecheap, add a **CNAME** record with Host `api` pointing to `cname.vercel-dns.com`.
+4. **Test:** open `https://api.leavenomark.org/api/health`. It should say `"quotes": "accepting"`. Then send a test quote and check the Outlook inbox (and the junk folder):
    ```sh
    curl -X POST https://api.leavenomark.org/api/quotes -H 'Content-Type: application/json' \
      -d '{"services":["windows"],"customer":{"name":"Test","phone":"0412 564 110"},"notes":"TEST - ignore","customer_consent":true,"agent":"test"}'
    ```
+   If quotes land in junk, mark one as **Not junk** so the rest come through.
+
+That's all it needs. Optional extras, as Vercel environment variables:
+
+| Variable | What it does |
+|---|---|
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Free at https://upstash.com. Makes the rate limits exact across servers. Without them, the limits are approximate but still work. |
+| `HASH_SALT` | Any long random string. Used when hashing caller IPs. |
+| `QUOTE_TO_EMAIL` | Send quotes to a different inbox (default `leavenomark@outlook.com`). |
+| `QUOTE_FROM_EMAIL` | A nicer sender such as `Leave No Mark <quotes@leavenomark.org>`. Only after verifying `leavenomark.org` in Resend under **Domains**. |
+| `LIMIT_SENT_PER_HOUR`, `LIMIT_SENT_PER_DAY`, `LIMIT_GLOBAL_PER_DAY`, `LIMIT_ATTEMPTS_PER_HOUR` | Change the limits (defaults 5 / 10 / 50 / 30). |
 
 **Run the tests:** `cd agent-api && npm test` (Node 20 or later, no installs needed).
 
