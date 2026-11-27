@@ -1,0 +1,139 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Leave No Mark quote API",
+    "version": "1.0.0",
+    "summary": "Request a free window or gutter cleaning quote in Brunswick, Melbourne.",
+    "description": "For AI assistants acting for a customer. Leave No Mark (owner: Mark) cleans windows for homes, shopfronts and cafés in Brunswick and surrounding suburbs of Melbourne, VIC, Australia, and cleans gutters. Prices are not fixed and are not returned instantly: send the job details and the customer's contact details, and Mark replies to the customer directly with a free, no-obligation price. Only send a request when the customer has asked for a quote and agreed to share their details. No API key is needed. Rate limited.",
+    "contact": { "name": "Leave No Mark", "url": "https://leavenomark.org", "email": "leavenomark@outlook.com" }
+  },
+  "servers": [{ "url": "https://api.leavenomark.org" }],
+  "paths": {
+    "/api/services": {
+      "get": {
+        "operationId": "listServices",
+        "summary": "Services, service area and the options a quote request accepts",
+        "responses": { "200": { "description": "Business details, services and allowed option values", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/api/quotes": {
+      "post": {
+        "operationId": "requestQuote",
+        "summary": "Ask Mark for a free quote for the customer",
+        "description": "Sends the request to Mark. He replies to the customer by phone, text or email with a price. Repeating the same request (same customer and services) within 24 hours returns the original reference and does not send it again.",
+        "parameters": [
+          { "name": "Idempotency-Key", "in": "header", "required": false, "description": "Optional. A unique value per quote request, so retries are not sent twice.", "schema": { "type": "string", "maxLength": 200 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QuoteRequest" },
+              "examples": {
+                "home": {
+                  "summary": "Home windows and gutters",
+                  "value": {
+                    "services": ["windows", "gutters"],
+                    "windows": { "sides": "inside_and_outside", "extras": ["fly_screens", "tracks"] },
+                    "gutters": { "gutter_guard": "no" },
+                    "property": "single_storey",
+                    "timing": "this_month",
+                    "customer": { "name": "Sam Lee", "phone": "0412 345 678", "suburb": "Coburg" },
+                    "notes": "Side gate is unlocked. Friendly dog.",
+                    "customer_consent": true,
+                    "agent": "Muse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Sent to Mark", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QuoteAccepted" } } } },
+          "200": { "description": "Already sent earlier (duplicate); not sent again", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QuoteAccepted" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "415": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" },
+          "502": { "$ref": "#/components/responses/Error" },
+          "503": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "QuoteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["services", "customer", "customer_consent"],
+        "properties": {
+          "services": {
+            "type": "array", "minItems": 1, "uniqueItems": true,
+            "items": { "type": "string", "enum": ["windows", "gutters", "shopfront", "not_sure"] },
+            "description": "windows = home windows (single storey; some double storey case by case). shopfront = shop or café windows. not_sure = Mark will follow up."
+          },
+          "windows": {
+            "type": "object", "additionalProperties": false, "description": "Only when services includes windows.",
+            "properties": {
+              "sides": { "type": "string", "enum": ["inside_and_outside", "outside_only", "inside_only"], "default": "inside_and_outside" },
+              "extras": { "type": "array", "uniqueItems": true, "items": { "type": "string", "enum": ["frames_and_sills", "fly_screens", "tracks", "glass_doors_and_balustrades"] } }
+            }
+          },
+          "gutters": {
+            "type": "object", "additionalProperties": false, "description": "Only when services includes gutters.",
+            "properties": { "gutter_guard": { "type": "string", "enum": ["yes", "no", "not_sure"], "default": "not_sure" } }
+          },
+          "shopfront": {
+            "type": "object", "additionalProperties": false, "description": "Only when services includes shopfront. 10% off the first shopfront clean.",
+            "properties": { "frequency": { "type": "string", "enum": ["weekly", "fortnightly", "monthly", "one_off"], "default": "fortnightly" } }
+          },
+          "property": { "type": "string", "enum": ["single_storey", "double_storey", "shop_or_cafe"] },
+          "timing": { "type": "string", "enum": ["asap", "this_month", "flexible"] },
+          "customer": {
+            "type": "object", "additionalProperties": false, "required": ["name"],
+            "description": "Give phone, email, or both.",
+            "properties": {
+              "name": { "type": "string", "maxLength": 80 },
+              "phone": { "type": "string", "maxLength": 20, "description": "Australian number, e.g. 0412 345 678 or +61 412 345 678" },
+              "email": { "type": "string", "format": "email", "maxLength": 254 },
+              "suburb": { "type": "string", "maxLength": 60 }
+            }
+          },
+          "notes": { "type": "string", "maxLength": 1000, "description": "Anything else: access, gate codes, pets, parking, number of windows." },
+          "customer_consent": { "type": "boolean", "const": true, "description": "Must be true: the customer asked for this quote and agreed to share these contact details with Leave No Mark." },
+          "agent": { "type": "string", "maxLength": 60, "description": "Name of the assistant sending this, e.g. Muse or Instinct." }
+        }
+      },
+      "QuoteAccepted": {
+        "type": "object",
+        "properties": {
+          "reference": { "type": "string", "example": "LNM-7K2QX9AB" },
+          "status": { "type": "string", "enum": ["received", "already_received"] },
+          "message": { "type": "string" },
+          "pricing": { "type": "string" },
+          "next_steps": { "type": "array", "items": { "type": "string" } },
+          "contact": { "type": "object", "properties": { "phone": { "type": "string" }, "email": { "type": "string" }, "website": { "type": "string" } } }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "details": { "type": "array", "items": { "type": "object", "properties": { "field": { "type": "string" }, "message": { "type": "string" } } } }
+            }
+          },
+          "fallback": { "type": "string", "description": "How the customer can reach Mark directly." }
+        }
+      }
+    },
+    "responses": {
+      "Error": { "description": "Error. Tell the customer the fallback.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    }
+  }
+}

@@ -15,6 +15,8 @@ assets/apple-touch-icon.png   iPhone home-screen icon
 assets/og-image.jpg     preview image when the link is shared (1200×630)
 assets/fonts/           self-hosted Nunito + DM Sans (SIL Open Font License)
 assets/photos/          put before/after photos here
+agent-api/              quote API for AI assistants (deployed separately on Vercel)
+llms.txt                tells AI assistants how to request a quote
 .nojekyll               tells GitHub Pages to serve files as-is
 ```
 
@@ -96,6 +98,55 @@ Page views and quote-form progress are tracked with [Umami Cloud](https://cloud.
 **Funnel report:** in Umami go to **Reports → Funnel**, pick a window of 1 hour, and add steps: URL `/`, then events `quote-1-started`, `quote-2-details`, `quote-3-property`, `quote-4-contact`, `quote-5-sent`. It shows how many visitors reach each step and where they drop off.
 
 Calls and texts are probably the bigger lead source, so look at the `contact-*` events alongside the funnel.
+
+## Quote API for AI assistants (Muse, Instinct and others)
+
+Personal AI agents like Meta's Muse and Instinct can ask Mark for a quote for their user without filling in the web form. The code is in `agent-api/`. It's a small serverless API, hosted on Vercel (free Hobby plan) at `https://api.leavenomark.org`, because GitHub Pages can't run server code.
+
+| | |
+|---|---|
+| `GET /api/services` | What Mark does, the service area, and the options a request accepts |
+| `POST /api/quotes` | Sends a quote request to Mark's inbox. Returns a reference like `LNM-7K2QX9AB` |
+| `GET /api/health` | Shows whether email delivery is set up |
+| `/openapi.json`, `/llms.txt` | How assistants find and learn the API (`llms.txt` is also on the main site) |
+
+There's no instant price. The API passes the job details on, and Mark replies to the customer with a price, the same as he does for the web form.
+
+**Security:**
+
+- **Mark's inbox is the only recipient.** The API never emails the customer's address. That means nobody can use it to send email to other people.
+- **Strict input.** Every field is checked against a fixed list of options. Unknown fields are rejected. Text is length-capped and cleaned of control characters. Phone numbers must be Australian. Emails are plain text, so nothing in a request can show up as a link or HTML.
+- **Customer consent required.** The assistant must send `"customer_consent": true`, confirming the customer asked for the quote and agreed to share their details.
+- **Rate limits.** 30 calls an hour per caller. Only 5 quotes an hour or 10 a day can reach the inbox from one caller, and 50 a day in total. Repeats of the same request within 24 hours aren't sent again. You can change the numbers with environment variables (below).
+- **Websites can't use it from a visitor's browser.** `POST` has no CORS headers, and bodies must be JSON and under 8 KB.
+- **Private by default.** Customer details are never logged, and caller IPs are only stored as salted hashes. No secrets are in the code. The keys live in Vercel environment variables.
+
+**Setup (once):**
+
+1. **Resend (email, free):** sign up at https://resend.com, ideally **with leavenomark@outlook.com**. Until the domain is verified, Resend's test sender can only deliver to the account's own email address. Create an API key with **Sending access** only.
+   Optional, but better: **Domains → Add** `leavenomark.org`, add the DNS records it shows at Namecheap, then use a sender like `Leave No Mark <quotes@leavenomark.org>`.
+2. **Upstash Redis (shared rate limits, free):** create a database at https://upstash.com and copy the **REST URL** and **REST token**. Without these, limits only count per server instance.
+3. **Vercel:** **Add New → Project**, import `watstack/leave-no-mark`, set **Root Directory** to `agent-api`, framework **Other**, then add these environment variables:
+
+   | Variable | Value |
+   |---|---|
+   | `RESEND_API_KEY` | from step 1 (required) |
+   | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | from step 2 (strongly recommended) |
+   | `HASH_SALT` | any long random string |
+   | `QUOTE_TO_EMAIL` | optional, default `leavenomark@outlook.com` |
+   | `QUOTE_FROM_EMAIL` | optional, e.g. `Leave No Mark <quotes@leavenomark.org>` once the domain is verified |
+   | `LIMIT_SENT_PER_HOUR`, `LIMIT_SENT_PER_DAY`, `LIMIT_GLOBAL_PER_DAY`, `LIMIT_ATTEMPTS_PER_HOUR` | optional, defaults 5 / 10 / 50 / 30 |
+
+4. **Domain:** in Vercel project **Settings → Domains**, add `api.leavenomark.org`. At Namecheap, add a **CNAME** record with Host `api` pointing to `cname.vercel-dns.com`.
+5. **Test:** open `https://api.leavenomark.org/api/health`. It should say `"quotes": "accepting"`. Then send a test request:
+   ```sh
+   curl -X POST https://api.leavenomark.org/api/quotes -H 'Content-Type: application/json' \
+     -d '{"services":["windows"],"customer":{"name":"Test","phone":"0412 564 110"},"notes":"TEST - ignore","customer_consent":true,"agent":"test"}'
+   ```
+
+**Run the tests:** `cd agent-api && npm test` (Node 20 or later, no installs needed).
+
+If you change the quote form's options in `index.html`, update `agent-api/lib/catalog.js` and `agent-api/public/openapi.json` to match.
 
 ## Custom domain: leavenomark.org
 
